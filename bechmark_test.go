@@ -1,0 +1,81 @@
+package cure
+
+import (
+	"bytes"
+	"io"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/cnaize/cure/core"
+	"github.com/cnaize/cure/middleware"
+)
+
+type discardResponseWriter struct{}
+
+func (m discardResponseWriter) Header() http.Header        { return nil }
+func (m discardResponseWriter) Write([]byte) (int, error)  { return 0, nil }
+func (m discardResponseWriter) WriteHeader(statusCode int) {}
+
+func BenchmarkHTTPHandler(b *testing.B) {
+	url := "/api/data?age=21&role=admin&session=xyz123456789&theme=dark&lang=en"
+	some := []byte(`{"status": "success", "data": {"user": "bob"}}`)
+	body := bytes.Repeat(some, 200) // ~10КБ
+	headers := map[string]string{
+		"Accept":            "application/json",
+		"X-Custom-Header-1": "value1",
+		"X-Custom-Header-2": "value2",
+	}
+	cookies := []*http.Cookie{
+		{Name: "auth_token", Value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"},
+		{Name: "settings", Value: "volume=100,notifications=true,experimental=false"},
+		{Name: "tracking_id", Value: "track_99887766554433221100abcde"},
+	}
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	assert.NoError(b, err)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	for _, cookie := range cookies {
+		req.AddCookie(cookie)
+	}
+
+	var w discardResponseWriter
+
+	b.Run("without cure", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			req.Body = io.NopCloser(bytes.NewReader(body))
+			next.ServeHTTP(w, req)
+		}
+	})
+
+	cure := core.NewCure()
+	err = cure.Update(b.Context())
+	require.NoError(b, err)
+
+	handler := middleware.NewCure(cure).
+		WithOptions(&middleware.Options{
+			ScanNeeded: middleware.ScanNeededFull,
+		}).
+		HTTPHandler(next)
+
+	b.Run("with cure", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			req.Body = io.NopCloser(bytes.NewReader(body))
+			handler.ServeHTTP(w, req)
+		}
+	})
+}
