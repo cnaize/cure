@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/mholt/archives v0.1.5
 	github.com/rs/zerolog v1.35.1
-	github.com/sansecio/yargo v0.2.2
+	github.com/sansecio/yargo v0.3.0
 	github.com/stretchr/testify v1.11.1
 	github.com/valyala/fasthttp v1.72.0
 	resty.dev/v3 v3.0.0-rc.3

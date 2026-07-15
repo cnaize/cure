@@ -97,8 +97,8 @@ github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjR
 github.com/rogpeppe/go-internal v1.10.0/go.mod h1:UQnix2H7Ngw/k4C5ijL5+65zddjncjaFoBhdsK/akog=
 github.com/rs/zerolog v1.35.1 h1:m7xQeoiLIiV0BCEY4Hs+j2NG4Gp2o2KPKmhnnLiazKI=
 github.com/rs/zerolog v1.35.1/go.mod h1:EjML9kdfa/RMA7h/6z6pYmq1ykOuA8/mjWaEvGI+jcw=
-github.com/sansecio/yargo v0.2.2 h1:Z3WgzGfU1Mtobfzpuf7oBJVbJdLqwtEqA3HOmSsouEw=
-github.com/sansecio/yargo v0.2.2/go.mod h1:K1Fb8oq1ncHYD8XrKzj/T6dpHkWNpwH4ghiv2TOgSpg=
+github.com/sansecio/yargo v0.3.0 h1:uJAIBQiJAD5q8oy+/ZjyQdfcaIA5tJf19YacSywBQp8=
+github.com/sansecio/yargo v0.3.0/go.mod h1:K1Fb8oq1ncHYD8XrKzj/T6dpHkWNpwH4ghiv2TOgSpg=
 github.com/sorairolake/lzip-go v0.3.8 h1:j5Q2313INdTA80ureWYRhX+1K78mUXfMoPZCw/ivWik=
 github.com/sorairolake/lzip-go v0.3.8/go.mod h1:JcBqGMV0frlxwrsE9sMWXDjqn3EeVf0/54YPsw66qkU=
 github.com/spf13/afero v1.15.0 h1:b/YBCLWAJdFWJTN9cLhiXXcD7mzKn9Dm86dNnfyQw1I=

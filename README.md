@@ -88,8 +88,8 @@ func main() {
 ## Benchmarks
 
 ```text
-Rules: 1079
+Rules: 1086
 
-BenchmarkHTTPHandler/without_cure-8       77524804          39.08 ns/op     64 B/op    2 allocs/op
-BenchmarkHTTPHandler/with_cure-8             46275       77259 ns/op     10964 B/op   28 allocs/op
+BenchmarkHTTPHandler/without_cure-8       97028310          37.33 ns/op       64 B/op      2 allocs/op
+BenchmarkHTTPHandler/with_cure-8             60812       59523 ns/op       10772 B/op     24 allocs/op
 ```
