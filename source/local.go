@@ -8,20 +8,20 @@ import (
 	"iter"
 	"os"
 	"path/filepath"
-	"slices"
-	"strings"
 
 	"github.com/mholt/archives"
 	"github.com/rs/zerolog"
 
 	"github.com/cnaize/cure/logger"
+	"github.com/cnaize/cure/source/adapter"
 )
 
 var _ Source = (*Local)(nil)
 
 type Local struct {
-	path   string
-	logger *zerolog.Logger
+	path    string
+	adapter adapter.Adapter
+	logger  *zerolog.Logger
 }
 
 func NewLocal(path string) *Local {
@@ -32,9 +32,16 @@ func NewLocal(path string) *Local {
 		Logger()
 
 	return &Local{
-		path:   path,
-		logger: &logger,
+		path:    path,
+		adapter: adapter.NewYara(),
+		logger:  &logger,
 	}
+}
+
+func (s *Local) WithAdapter(adapter adapter.Adapter) *Local {
+	s.adapter = adapter
+
+	return s
 }
 
 func (s *Local) WithLogger(logger *zerolog.Logger) *Local {
@@ -75,7 +82,7 @@ func (s *Local) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 						return nil
 					}
 
-					if !slices.Contains(YaraFileExtensions, strings.ToLower(filepath.Ext(info.NameInArchive))) {
+					if !s.adapter.Check(info.NameInArchive) {
 						return nil
 					}
 
@@ -85,7 +92,7 @@ func (s *Local) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 					}
 					defer file.Close()
 
-					if !yield(file) {
+					if !yield(s.adapter.Adapt(file)) {
 						cancel()
 						return context.Canceled
 					}
@@ -113,7 +120,7 @@ func (s *Local) dirFiles(yield func(io.Reader) bool) error {
 			return nil
 		}
 
-		if !slices.Contains(YaraFileExtensions, strings.ToLower(filepath.Ext(path))) {
+		if !s.adapter.Check(path) {
 			return nil
 		}
 
@@ -124,7 +131,7 @@ func (s *Local) dirFiles(yield func(io.Reader) bool) error {
 		}
 		defer file.Close()
 
-		if !yield(file) {
+		if !yield(s.adapter.Adapt(file)) {
 			return filepath.SkipAll
 		}
 

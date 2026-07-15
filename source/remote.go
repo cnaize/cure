@@ -6,22 +6,21 @@ import (
 	"fmt"
 	"io"
 	"iter"
-	"path/filepath"
-	"slices"
-	"strings"
 
 	"github.com/mholt/archives"
 	"github.com/rs/zerolog"
 	"resty.dev/v3"
 
 	"github.com/cnaize/cure/logger"
+	"github.com/cnaize/cure/source/adapter"
 )
 
 var _ Source = (*Remote)(nil)
 
 type Remote struct {
-	url    string
-	logger *zerolog.Logger
+	url     string
+	adapter adapter.Adapter
+	logger  *zerolog.Logger
 }
 
 func NewRemote(url string) *Remote {
@@ -32,9 +31,16 @@ func NewRemote(url string) *Remote {
 		Logger()
 
 	return &Remote{
-		url:    url,
-		logger: &logger,
+		url:     url,
+		adapter: adapter.NewYara(),
+		logger:  &logger,
 	}
+}
+
+func (s *Remote) WithAdapter(adapter adapter.Adapter) *Remote {
+	s.adapter = adapter
+
+	return s
 }
 
 func (s *Remote) WithLogger(logger *zerolog.Logger) *Remote {
@@ -75,7 +81,7 @@ func (s *Remote) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 						return nil
 					}
 
-					if !slices.Contains(YaraFileExtensions, strings.ToLower(filepath.Ext(info.NameInArchive))) {
+					if !s.adapter.Check(info.NameInArchive) {
 						return nil
 					}
 
@@ -85,7 +91,7 @@ func (s *Remote) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 					}
 					defer file.Close()
 
-					if !yield(file) {
+					if !yield(s.adapter.Adapt(file)) {
 						cancel()
 						return context.Canceled
 					}

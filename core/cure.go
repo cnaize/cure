@@ -12,6 +12,7 @@ import (
 
 	"github.com/cnaize/cure/logger"
 	"github.com/cnaize/cure/source"
+	"github.com/cnaize/cure/source/adapter"
 )
 
 type Cure struct {
@@ -31,8 +32,8 @@ func NewCure() *Cure {
 	return &Cure{
 		// default sources
 		sources: []source.Source{
-			source.NewRemote("https://github.com/YARAHQ/yara-forge/releases/latest/download/yara-forge-rules-core.zip"),
-			source.NewRemote("https://github.com/Neo23x0/signature-base/archive/refs/heads/master.zip"),
+			source.NewRemote("https://github.com/coreruleset/coreruleset/releases/latest/download/coreruleset-4.28.0-minimal.zip").
+				WithAdapter(adapter.NewCrs()),
 		},
 		options: &Options{},
 		logger:  &logger,

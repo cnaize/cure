@@ -50,7 +50,7 @@ func main() {
 	})
 
 	mux := http.NewServeMux()
-	// cure automatically scans incoming requests before passing control to your handler
+	// cure automatically scans incoming requests before your handler
 	mux.Handle("/api/some", cwaf(yourHandler))
 
 	_ = http.ListenAndServe(":8080", mux)
@@ -69,13 +69,15 @@ import (
 
 	curec "github.com/cnaize/cure/core"
 	cures "github.com/cnaize/cure/source"
+	curea "github.com/cnaize/cure/source/adapter"
 )
 
 func main() {
-	// supports both local/remote files and all kinds of archives via github.com/mholt/archives
+	// supports both local and remote files (yara, crs) and all kinds of archives
 	cure := curec.NewCure().WithSources(
 		cures.NewLocal("./my-yara-rules.zip"),
-		cures.NewRemote("https://my-company/rules.yar"),
+		cures.NewRemote("https://my-company/crs-rules.conf").
+			WithAdapter(curea.NewCrs()),
 	)
 
 	// manual rules update
@@ -88,8 +90,10 @@ func main() {
 ## Benchmarks
 
 ```text
-Rules: 1086
+Mode: Full (Headers, Cookies, Query, Body)
+Body: ~10KB
+Rules: 318 (OWASP CRS)
 
-BenchmarkHTTPHandler/without_cure-8       97028310          37.33 ns/op       64 B/op      2 allocs/op
-BenchmarkHTTPHandler/with_cure-8             60812       59523 ns/op       10772 B/op     24 allocs/op
+BenchmarkHTTPHandler/without_cure-8    85122314        37.94 ns/op       64 B/op     2 allocs/op
+BenchmarkHTTPHandler/with_cure-8           3709    994004 ns/op       18986 B/op    32 allocs/op
 ```

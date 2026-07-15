@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/cnaize/cure/source"
+	"github.com/cnaize/cure/source/adapter"
 )
 
 func TestCureHappyPath(t *testing.T) {
@@ -54,8 +55,19 @@ func TestCureUpdate(t *testing.T) {
 			err:      nil,
 		},
 		{
-			name:     "valid remote source archive",
-			sources:  []source.Source{source.NewRemote("https://github.com/YARAHQ/yara-forge/releases/latest/download/yara-forge-rules-core.zip")},
+			name: "valid remote source archive",
+			sources: []source.Source{
+				source.NewRemote("https://github.com/YARAHQ/yara-forge/releases/latest/download/yara-forge-rules-core.zip"),
+			},
+			numrules: -1,
+			err:      nil,
+		},
+		{
+			name: "valid remote crs source",
+			sources: []source.Source{
+				source.NewRemote("https://github.com/coreruleset/coreruleset/releases/latest/download/coreruleset-4.28.0-minimal.zip").
+					WithAdapter(adapter.NewCrs()),
+			},
 			numrules: -1,
 			err:      nil,
 		},
@@ -80,7 +92,7 @@ func TestCureUpdate(t *testing.T) {
 			}
 
 			if test.numrules < 0 {
-				assert.Greater(t, cure.rules.Load().NumRules(), 1)
+				assert.Greater(t, cure.rules.Load().NumRules(), 10)
 			} else {
 				assert.Equal(t, test.numrules, cure.rules.Load().NumRules())
 			}
