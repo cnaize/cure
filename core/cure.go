@@ -32,7 +32,7 @@ func NewCure() *Cure {
 	return &Cure{
 		// default sources
 		sources: []source.Source{
-			source.NewRemote("https://github.com/coreruleset/coreruleset/releases/latest/download/coreruleset-4.28.0-minimal.zip").
+			source.NewRemote("https://github.com/coreruleset/coreruleset/releases/download/v4.28.0/coreruleset-4.28.0-minimal.zip").
 				WithAdapter(adapter.NewCrs()),
 		},
 		options: &Options{},
