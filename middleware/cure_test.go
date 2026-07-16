@@ -78,20 +78,10 @@ func TestHTTPHandler(t *testing.T) {
 			method: http.MethodGet,
 			url:    "/api/data",
 			headers: map[string]string{
+				"Accept": "application/json",
 				"cOoKiE": "session=clean_value; auth_token=Valid_Rule_3",
 			},
-			scan:   ScanNeededCookies,
-			status: http.StatusBadRequest,
-		},
-		{
-			name:   "bad get request (cookies via headers)",
-			method: http.MethodGet,
-			url:    "/api/data",
-			headers: map[string]string{
-				"Accept": "application/json",
-				"Cookie": "auth_token=Valid_Rule_4",
-			},
-			scan:   ScanNeededHeaders,
+			scan:   ScanNeededHeaders | ScanNeededCookies,
 			status: http.StatusBadRequest,
 		},
 		{

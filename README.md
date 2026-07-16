@@ -1,6 +1,6 @@
 # Cure
 
-`cure` — Pure Go Web Application Firewall (WAF) based on YARA rules (powered by [Yargo](https://github.com/sansecio/yargo))
+`cure` — Pure Go Web Application Firewall (WAF) based on YARA rules
 
 ---
 
@@ -90,10 +90,10 @@ func main() {
 ## Benchmarks
 
 ```text
-Mode: Full (Headers, Cookies, Query, Body)
+Mode: Full
 Body: ~10KB
-Rules: 318 (OWASP CRS)
+Rules: 209 (OWASP CRS)
 
-BenchmarkHTTPHandler/without_cure-8    85122314        37.94 ns/op       64 B/op     2 allocs/op
-BenchmarkHTTPHandler/with_cure-8           3709    994004 ns/op       18986 B/op    32 allocs/op
+BenchmarkHTTPHandler/without_cure-8    7680187       447.7 ns/op     1008 B/op     7 allocs/op
+BenchmarkHTTPHandler/with_cure-8          3632    996266 ns/op      22881 B/op    80 allocs/op
 ```

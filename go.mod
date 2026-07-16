@@ -8,7 +8,6 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/sansecio/yargo v0.3.0
 	github.com/stretchr/testify v1.11.1
-	github.com/valyala/fasthttp v1.72.0
 	resty.dev/v3 v3.0.0-rc.3
 )
 
@@ -56,7 +55,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/wasilibs/go-re2 v1.12.0 // indirect
 	github.com/wasilibs/wazero-helpers v0.0.0-20250123031827-cd30c44769bb // indirect
 	go.mongodb.org/mongo-driver/v2 v2.8.0 // indirect

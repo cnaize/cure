@@ -1,4 +1,4 @@
-rule Valid_Rule_1 {
+rule Rule {
     meta:
         severity = "HIGH"
     strings:
@@ -7,7 +7,7 @@ rule Valid_Rule_1 {
         $trigger
 }
 
-rule Invalid_Rule_1 {
+rule Rule {
 	meta:
  		severity = "HIGH"
    	strings:
@@ -17,7 +17,7 @@ rule Invalid_Rule_1 {
       	1 of them
 }
 
-rule Valid_Rule_2 {
+rule Rule {
     meta:
         severity = "HIGH"
     strings:
@@ -25,7 +25,7 @@ rule Valid_Rule_2 {
     condition:
         $trigger
 }
-rule Valid_Rule_3 {
+rule Rule {
 	meta:
 		severity = "HIGH"
 	strings:

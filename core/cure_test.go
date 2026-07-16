@@ -37,25 +37,32 @@ func TestCureUpdate(t *testing.T) {
 		err      error
 	}{
 		{
-			name:     "valid local source file",
+			name:     "valid local source yara file",
 			sources:  []source.Source{source.NewLocal("../testdata/test-rules-1.yar")},
 			numrules: 3,
 			err:      nil,
 		},
 		{
-			name:     "valid local source directory",
+			name: "valid local source crs file",
+			sources: []source.Source{source.NewLocal("../testdata/test-rules-1.conf").
+				WithAdapter(adapter.NewCrs())},
+			numrules: 39,
+			err:      nil,
+		},
+		{
+			name:     "valid local source yara directory",
 			sources:  []source.Source{source.NewLocal("../testdata")},
 			numrules: 4,
 			err:      nil,
 		},
 		{
-			name:     "valid local source archive",
+			name:     "valid local source yara archive",
 			sources:  []source.Source{source.NewLocal("../testdata/test-rules.zip")},
 			numrules: 4,
 			err:      nil,
 		},
 		{
-			name: "valid remote source archive",
+			name: "valid remote source yara archive",
 			sources: []source.Source{
 				source.NewRemote("https://github.com/YARAHQ/yara-forge/releases/latest/download/yara-forge-rules-core.zip"),
 			},
@@ -63,7 +70,15 @@ func TestCureUpdate(t *testing.T) {
 			err:      nil,
 		},
 		{
-			name: "valid remote crs source",
+			name: "valid remote source crs file",
+			sources: []source.Source{
+				source.NewRemote("https://raw.githubusercontent.com/coreruleset/coreruleset/8e3226507a08eb6beb88f17570fb14417b27107b/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf").
+					WithAdapter(adapter.NewCrs())},
+			numrules: -1,
+			err:      nil,
+		},
+		{
+			name: "valid remote source crs archive",
 			sources: []source.Source{
 				source.NewRemote("https://github.com/coreruleset/coreruleset/releases/download/v4.28.0/coreruleset-4.28.0-minimal.zip").
 					WithAdapter(adapter.NewCrs()),

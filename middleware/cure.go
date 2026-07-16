@@ -6,12 +6,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
+	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/sansecio/yargo/scanner"
-	"github.com/valyala/fasthttp"
 
 	"github.com/cnaize/cure/core"
 	"github.com/cnaize/cure/logger"
@@ -71,14 +72,6 @@ func (m *Cure) HTTPHandler(next http.Handler) http.Handler {
 	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// scan query
-		if m.scanNeeded(ScanNeededQuery) {
-			if !m.scanQuery(r.URL) {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-		}
-
 		// scan headers
 		if m.scanNeeded(ScanNeededHeaders) {
 			if !m.scanHeaders(r.Header) {
@@ -87,9 +80,9 @@ func (m *Cure) HTTPHandler(next http.Handler) http.Handler {
 			}
 		}
 
-		// scan cookies
-		if m.scanNeeded(ScanNeededCookies) {
-			if !m.scanCookies(r.Header) {
+		// scan query
+		if m.scanNeeded(ScanNeededQuery) {
+			if !m.scanQuery(r.URL) {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -122,96 +115,67 @@ func (m *Cure) GinHandler() gin.HandlerFunc {
 	}
 }
 
+func (m *Cure) scanHeaders(header http.Header) bool {
+	const cookieKey = "Cookie"
+
+	if len(header) < 1 {
+		return true
+	}
+
+	for key, val := range header {
+		if key == cookieKey && !m.scanNeeded(ScanNeededCookies) {
+			continue
+		}
+
+		for _, v := range val {
+			if len(v) < 1 {
+				continue
+			}
+
+			if key == cookieKey {
+				for cookie := range strings.SplitSeq(v, ";") {
+					cookie = strings.TrimSpace(cookie)
+					if len(cookie) < 1 {
+						continue
+					}
+
+					if i := strings.IndexByte(cookie, '='); i != -1 {
+						cookie = cookie[i+1:]
+					}
+
+					data := unsafe.Slice(unsafe.StringData(cookie), len(cookie))
+					if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+						return false
+					}
+				}
+			} else {
+				data := unsafe.Slice(unsafe.StringData(v), len(v))
+				if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
 func (m *Cure) scanQuery(url *url.URL) bool {
 	if len(url.RawQuery) < 1 {
 		return true
 	}
 
-	args := fasthttp.AcquireArgs()
-	defer fasthttp.ReleaseArgs(args)
+	for _, val := range url.Query() {
+		for _, v := range val {
+			if len(v) < 1 {
+				continue
+			}
 
-	bptr := m.buffPool.Get().(*[]byte)
-	defer m.buffPool.Put(bptr)
-
-	buff := (*bptr)[:0]
-	args.Parse(url.RawQuery)
-
-	first := true
-	for k, v := range args.All() {
-		if !first {
-			buff = append(buff, '&')
-		}
-		first = false
-
-		buff = append(buff, k...)
-		buff = append(buff, '=')
-		buff = append(buff, v...)
-
-		if len(buff) >= m.options.MaxBuffSize {
-			break
-		}
-	}
-
-	if err := m.cure.Scan(buff, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
-		return false
-	}
-
-	return true
-}
-
-func (m *Cure) scanHeaders(header http.Header) bool {
-	bptr := m.buffPool.Get().(*[]byte)
-	defer m.buffPool.Put(bptr)
-
-	buff := (*bptr)[:0]
-	for k, h := range header {
-		buff = append(buff, k...)
-		buff = append(buff, ": "...)
-		for i, v := range h {
-			buff = append(buff, v...)
-			if i < len(h)-1 {
-				buff = append(buff, ',')
+			data := unsafe.Slice(unsafe.StringData(v), len(v))
+			if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+				return false
 			}
 		}
-		buff = append(buff, '\n')
-
-		if len(buff) >= m.options.MaxBuffSize {
-			break
-		}
-	}
-
-	if err := m.cure.Scan(buff, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
-		return false
-	}
-
-	return true
-}
-
-func (m *Cure) scanCookies(header http.Header) bool {
-	cookies := header["Cookie"]
-	if len(cookies) < 1 {
-		return true
-	}
-
-	bptr := m.buffPool.Get().(*[]byte)
-	defer m.buffPool.Put(bptr)
-
-	buff := (*bptr)[:0]
-	for _, cookie := range cookies {
-		if len(cookie) < 1 {
-			continue
-		}
-
-		buff = append(buff, cookie...)
-		buff = append(buff, '\n')
-
-		if len(buff) >= m.options.MaxBuffSize {
-			break
-		}
-	}
-
-	if err := m.cure.Scan(buff, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
-		return false
 	}
 
 	return true

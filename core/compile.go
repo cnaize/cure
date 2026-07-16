@@ -12,7 +12,7 @@ import (
 	"github.com/sansecio/yargo/scanner"
 )
 
-var YaraRulePrefixes = []string{"rule ", "global rule ", "private rule "}
+var yaraRulePrefixes = []string{"rule ", "global rule ", "private rule "}
 
 func Compile(files iter.Seq[io.Reader]) (*scanner.Rules, error) {
 	var buff strings.Builder
@@ -27,7 +27,7 @@ func Compile(files iter.Seq[io.Reader]) (*scanner.Rules, error) {
 
 			raw := reader.Text()
 			line := strings.TrimSpace(raw)
-			if stop || slices.ContainsFunc(YaraRulePrefixes, func(prefix string) bool {
+			if stop || slices.ContainsFunc(yaraRulePrefixes, func(prefix string) bool {
 				return strings.HasPrefix(line, prefix)
 			}) {
 				if buff.Len() > 0 {

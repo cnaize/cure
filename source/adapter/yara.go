@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var YaraFileExtensions = []string{".yar", ".yara"}
+var yaraFileExtensions = []string{".yar", ".yara"}
 
 var _ Adapter = Yara{}
 
@@ -19,9 +19,9 @@ func NewYara() Yara {
 }
 
 func (a Yara) Check(name string) bool {
-	return slices.Contains(YaraFileExtensions, strings.ToLower(filepath.Ext(name)))
+	return slices.Contains(yaraFileExtensions, strings.ToLower(filepath.Ext(name)))
 }
 
-func (a Yara) Adapt(in io.Reader) io.Reader {
+func (a Yara) Adapt(name string, in io.Reader) io.Reader {
 	return in
 }

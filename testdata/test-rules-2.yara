@@ -1,7 +1,7 @@
 
 
 
-rule Invalid_Rule_2 {
+rule Rule {
 	meta:
  		severity = "HIGH"
    	strings:
@@ -12,7 +12,7 @@ rule Invalid_Rule_2 {
 }
 
 
-rule Valid_Rule_4 {
+rule Rule {
     meta:
         severity = "HIGH"
     strings:

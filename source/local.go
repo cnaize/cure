@@ -92,7 +92,7 @@ func (s *Local) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 					}
 					defer file.Close()
 
-					if !yield(s.adapter.Adapt(file)) {
+					if !yield(s.adapter.Adapt(info.NameInArchive, file)) {
 						cancel()
 						return context.Canceled
 					}
@@ -104,7 +104,7 @@ func (s *Local) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 				}
 			}
 		} else {
-			yield(stream)
+			yield(s.adapter.Adapt(s.path, stream))
 		}
 	}, nil
 }
@@ -131,7 +131,7 @@ func (s *Local) dirFiles(yield func(io.Reader) bool) error {
 		}
 		defer file.Close()
 
-		if !yield(s.adapter.Adapt(file)) {
+		if !yield(s.adapter.Adapt(path, file)) {
 			return filepath.SkipAll
 		}
 

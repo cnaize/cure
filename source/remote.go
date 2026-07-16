@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"iter"
+	"net/url"
+	"path"
 
 	"github.com/mholt/archives"
 	"github.com/rs/zerolog"
@@ -91,7 +93,7 @@ func (s *Remote) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 					}
 					defer file.Close()
 
-					if !yield(s.adapter.Adapt(file)) {
+					if !yield(s.adapter.Adapt(info.NameInArchive, file)) {
 						cancel()
 						return context.Canceled
 					}
@@ -103,7 +105,8 @@ func (s *Remote) Files(ctx context.Context) (iter.Seq[io.Reader], error) {
 				}
 			}
 		} else {
-			yield(stream)
+			u, _ := url.Parse(s.url)
+			yield(s.adapter.Adapt(path.Ext(u.Path), stream))
 		}
 	}, nil
 }
