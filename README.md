@@ -92,8 +92,8 @@ func main() {
 ```text
 Mode: Full
 Body: ~10KB
-Rules: 209 (OWASP CRS)
+Rules: 227 (OWASP CRS)
 
-BenchmarkHTTPHandler/without_cure-8    7680187       447.7 ns/op     1008 B/op     7 allocs/op
-BenchmarkHTTPHandler/with_cure-8          3632    996266 ns/op      22881 B/op    80 allocs/op
+BenchmarkHTTPHandler/without_cure-8    8044665       424.3 ns/op     1008 B/op     7 allocs/op
+BenchmarkHTTPHandler/with_cure-8          3600    996033 ns/op      22356 B/op    72 allocs/op
 ```

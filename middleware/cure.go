@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/sansecio/yargo/scanner"
+	"github.com/valyala/fasthttp"
 
 	"github.com/cnaize/cure/core"
 	"github.com/cnaize/cure/logger"
@@ -128,19 +129,20 @@ func (m *Cure) scanHeaders(header http.Header) bool {
 		}
 
 		for _, v := range val {
+			v = strings.TrimSpace(v)
 			if len(v) < 1 {
 				continue
 			}
 
 			if key == cookieKey {
 				for cookie := range strings.SplitSeq(v, ";") {
+					if i := strings.IndexByte(cookie, '='); i != -1 {
+						cookie = cookie[i+1:]
+					}
+
 					cookie = strings.TrimSpace(cookie)
 					if len(cookie) < 1 {
 						continue
-					}
-
-					if i := strings.IndexByte(cookie, '='); i != -1 {
-						cookie = cookie[i+1:]
 					}
 
 					data := unsafe.Slice(unsafe.StringData(cookie), len(cookie))
@@ -165,16 +167,18 @@ func (m *Cure) scanQuery(url *url.URL) bool {
 		return true
 	}
 
-	for _, val := range url.Query() {
-		for _, v := range val {
-			if len(v) < 1 {
-				continue
-			}
+	args := fasthttp.AcquireArgs()
+	defer fasthttp.ReleaseArgs(args)
 
-			data := unsafe.Slice(unsafe.StringData(v), len(v))
-			if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
-				return false
-			}
+	args.Parse(url.RawQuery)
+	for _, v := range args.All() {
+		v = bytes.TrimSpace(v)
+		if len(v) < 1 {
+			continue
+		}
+
+		if err := m.cure.Scan(v, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+			return false
 		}
 	}
 

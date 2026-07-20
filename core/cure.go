@@ -33,7 +33,9 @@ func NewCure() *Cure {
 		// default sources
 		sources: []source.Source{
 			source.NewRemote("https://github.com/coreruleset/coreruleset/releases/download/v4.28.0/coreruleset-4.28.0-minimal.zip").
-				WithAdapter(adapter.NewCrs()),
+				WithAdapter(adapter.NewCrs().
+					WithExclude("restricted-upload.data", "unix-shell-aliases.data", "unix-shell-builtins.data"),
+				),
 		},
 		options: &Options{},
 		logger:  &logger,

@@ -10,30 +10,61 @@ import (
 	"strings"
 )
 
-var crsFileExtensions = []string{".conf"}
+var crsFileExtensions = []string{".conf", ".data"}
 
 // WARNING: not fully implemented yet
 // developed to support OWASP CRS (https://github.com/coreruleset/coreruleset)
 var _ Adapter = (*Crs)(nil)
 
 type Crs struct {
-	num int
+	num     int
+	include []string
+	exclude []string
 }
 
 func NewCrs() *Crs {
 	return &Crs{}
 }
 
+func (a *Crs) WithInclude(names ...string) *Crs {
+	a.include = names
+
+	return a
+}
+
+func (a *Crs) WithExclude(names ...string) *Crs {
+	a.exclude = names
+
+	return a
+}
+
 func (a *Crs) Check(name string) bool {
-	return slices.Contains(crsFileExtensions, strings.ToLower(filepath.Ext(name)))
+	name = strings.ToLower(name)
+	if !slices.Contains(crsFileExtensions, filepath.Ext(name)) {
+		return false
+	}
+
+	if len(a.include) > 0 {
+		return slices.ContainsFunc(a.include, func(file string) bool {
+			return strings.HasSuffix(name, file)
+		})
+	}
+
+	if len(a.exclude) > 0 {
+		return !slices.ContainsFunc(a.exclude, func(file string) bool {
+			return strings.HasSuffix(name, file)
+		})
+	}
+
+	return true
 }
 
 func (a *Crs) Adapt(name string, in io.Reader) io.Reader {
 	switch strings.ToLower(filepath.Ext(name)) {
-	case ".data":
-		return a.adaptData(in)
 	case ".conf":
 		return a.adaptConf(in)
+	case ".data":
+		return a.adaptData(in)
 	}
 
 	return in
@@ -52,7 +83,7 @@ func (a *Crs) adaptData(in io.Reader) io.Reader {
 		line = strings.ReplaceAll(line, "\\", "\\\\")
 		line = strings.ReplaceAll(line, "\"", "\\\"")
 
-		fmt.Fprintf(&buff, "\t\t\t$s%d = \"%s\" nocase ascii\n", num, line)
+		fmt.Fprintf(&buff, "\t\t\t$s%d = %q nocase ascii\n", num, line)
 		num++
 	}
 
