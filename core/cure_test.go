@@ -52,13 +52,13 @@ func TestCureUpdate(t *testing.T) {
 		{
 			name:     "valid local source yara directory",
 			sources:  []source.Source{source.NewLocal("../testdata")},
-			numrules: 4,
+			numrules: 5,
 			err:      nil,
 		},
 		{
 			name:     "valid local source yara archive",
 			sources:  []source.Source{source.NewLocal("../testdata/test-rules.zip")},
-			numrules: 4,
+			numrules: 5,
 			err:      nil,
 		},
 		{

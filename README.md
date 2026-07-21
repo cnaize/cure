@@ -1,6 +1,6 @@
 # Cure
 
-`cure` — Pure Go Web Application Firewall (WAF) based on YARA rules
+`cure` — Pure Go API-Shield based on YARA rules
 
 ---
 
@@ -30,8 +30,12 @@ import (
 func main() {
 	cure := curec.NewCure()
 	// for native net/http, Chi, Echo, Fiber, etc.
-	// or use r.Use(curem.NewCure(cure).GinHandler()) for Gin framework
-	cwaf := curem.NewCure(cure).HTTPHandler
+	// or use ".GinHandler()" for Gin framework
+	cureHandler := curem.NewCure(cure).
+		WithOptions(&curem.Options{
+			ScanNeeded:  curem.ScanNeededFull,
+			ScanTimeout: 10 * time.Millisecond,
+		}).HTTPHandler
 
 	// auto update rules
 	_ = cure.Run(context.Background())
@@ -51,7 +55,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	// cure automatically scans incoming requests before your handler
-	mux.Handle("/api/some", cwaf(yourHandler))
+	mux.Handle("/api/some", cureHandler(yourHandler))
 
 	_ = http.ListenAndServe(":8080", mux)
 }
@@ -94,6 +98,6 @@ Mode: Full
 Body: ~10KB
 Rules: 227 (OWASP CRS)
 
-BenchmarkHTTPHandler/without_cure-8    8044665       424.3 ns/op     1008 B/op     7 allocs/op
-BenchmarkHTTPHandler/with_cure-8          3600    996033 ns/op      22356 B/op    72 allocs/op
+BenchmarkHTTPHandler/without_cure-8    8066433        428.3 ns/op     1008 B/op      7 allocs/op
+BenchmarkHTTPHandler/with_cure-8          3615    1003092 ns/op      26172 B/op    128 allocs/op
 ```

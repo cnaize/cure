@@ -79,9 +79,6 @@ func BenchmarkHTTPHandler(b *testing.B) {
 	require.NoError(b, err)
 
 	handler := middleware.NewCure(cure).
-		WithOptions(&middleware.Options{
-			ScanNeeded: middleware.ScanNeededFull,
-		}).
 		WithCallback(callback{}).
 		HTTPHandler(next)
 

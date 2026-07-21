@@ -20,3 +20,12 @@ rule Rule {
     condition:
         $trigger
 }
+
+rule Rule {
+    meta:
+        severity = "HIGH"
+    strings:
+        $trigger = "Valid_Header_Key_Rule" nocase ascii
+    condition:
+        $trigger
+}

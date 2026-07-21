@@ -73,9 +73,9 @@ func (m *Cure) HTTPHandler(next http.Handler) http.Handler {
 	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// scan headers
-		if m.scanNeeded(ScanNeededHeaders) {
-			if !m.scanHeaders(r.Header) {
+		// scan path
+		if m.scanNeeded(ScanNeededPath) {
+			if !m.scanPath(r.URL) {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -84,6 +84,14 @@ func (m *Cure) HTTPHandler(next http.Handler) http.Handler {
 		// scan query
 		if m.scanNeeded(ScanNeededQuery) {
 			if !m.scanQuery(r.URL) {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+
+		// scan headers
+		if m.scanNeeded(ScanNeededHeaders) || m.scanNeeded(ScanNeededCookies) {
+			if !m.scanHeaders(r.Header) {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -116,6 +124,57 @@ func (m *Cure) GinHandler() gin.HandlerFunc {
 	}
 }
 
+func (m *Cure) scanPath(u *url.URL) bool {
+	epath := u.EscapedPath()
+	if len(epath) < 1 {
+		return true
+	}
+
+	upath, err := url.PathUnescape(epath)
+	if err != nil {
+		upath = epath
+	}
+
+	data := unsafe.Slice(unsafe.StringData(upath), len(upath))
+	if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+		return false
+	}
+
+	return true
+}
+
+func (m *Cure) scanQuery(u *url.URL) bool {
+	if len(u.RawQuery) < 1 {
+		return true
+	}
+
+	args := fasthttp.AcquireArgs()
+	defer fasthttp.ReleaseArgs(args)
+
+	args.Parse(u.RawQuery)
+	for k, v := range args.All() {
+		if m.scanNeeded(ScanNeededQueryKey) {
+			k = bytes.TrimSpace(k)
+			if len(k) > 0 {
+				if err := m.cure.Scan(k, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+					return false
+				}
+			}
+		}
+
+		if m.scanNeeded(ScanNeededQueryVal) {
+			v = bytes.TrimSpace(v)
+			if len(v) > 0 {
+				if err := m.cure.Scan(v, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
 func (m *Cure) scanHeaders(header http.Header) bool {
 	const cookieKey = "Cookie"
 
@@ -124,8 +183,16 @@ func (m *Cure) scanHeaders(header http.Header) bool {
 	}
 
 	for key, val := range header {
+		key = strings.TrimSpace(key)
 		if key == cookieKey && !m.scanNeeded(ScanNeededCookies) {
 			continue
+		}
+
+		if len(key) > 0 && m.scanNeeded(ScanNeededHeadersKey) {
+			data := unsafe.Slice(unsafe.StringData(key), len(key))
+			if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+				return false
+			}
 		}
 
 		for _, v := range val {
@@ -136,49 +203,34 @@ func (m *Cure) scanHeaders(header http.Header) bool {
 
 			if key == cookieKey {
 				for cookie := range strings.SplitSeq(v, ";") {
-					if i := strings.IndexByte(cookie, '='); i != -1 {
-						cookie = cookie[i+1:]
+					ck, cv, _ := strings.Cut(cookie, "=")
+
+					if m.scanNeeded(ScanNeededCookiesKey) {
+						ck = strings.TrimSpace(ck)
+						if len(ck) > 0 {
+							data := unsafe.Slice(unsafe.StringData(ck), len(ck))
+							if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+								return false
+							}
+						}
 					}
 
-					cookie = strings.TrimSpace(cookie)
-					if len(cookie) < 1 {
-						continue
-					}
-
-					data := unsafe.Slice(unsafe.StringData(cookie), len(cookie))
-					if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
-						return false
+					if m.scanNeeded(ScanNeededCookiesVal) {
+						cv = strings.TrimSpace(cv)
+						if len(cv) > 0 {
+							data := unsafe.Slice(unsafe.StringData(cv), len(cv))
+							if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
+								return false
+							}
+						}
 					}
 				}
-			} else {
+			} else if m.scanNeeded(ScanNeededHeadersVal) {
 				data := unsafe.Slice(unsafe.StringData(v), len(v))
 				if err := m.cure.Scan(data, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
 					return false
 				}
 			}
-		}
-	}
-
-	return true
-}
-
-func (m *Cure) scanQuery(url *url.URL) bool {
-	if len(url.RawQuery) < 1 {
-		return true
-	}
-
-	args := fasthttp.AcquireArgs()
-	defer fasthttp.ReleaseArgs(args)
-
-	args.Parse(url.RawQuery)
-	for _, v := range args.All() {
-		v = bytes.TrimSpace(v)
-		if len(v) < 1 {
-			continue
-		}
-
-		if err := m.cure.Scan(v, 0, m.options.ScanTimeout, m.callback); errors.Is(err, core.ErrMatchFound) {
-			return false
 		}
 	}
 
